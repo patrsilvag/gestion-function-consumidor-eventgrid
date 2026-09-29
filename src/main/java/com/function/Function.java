@@ -51,9 +51,7 @@ public class Function {
                 String estado = data.get("estado").getAsString();
 
                 context.getLogger().info("========================================");
-
                 context.getLogger().info("EVENTO - ROL CREADO");
-
                 context.getLogger().info("========================================");
 
                 context.getLogger().info("Nombre rol: " + nombreRol);
@@ -80,9 +78,7 @@ public class Function {
                 String estado = data.get("estado").getAsString();
 
                 context.getLogger().info("========================================");
-
                 context.getLogger().info("EVENTO - ROL ACTUALIZADO");
-
                 context.getLogger().info("========================================");
 
                 context.getLogger().info("ID Rol: " + idRol);
@@ -107,9 +103,7 @@ public class Function {
                 long idRol = data.get("idRol").getAsLong();
 
                 context.getLogger().info("========================================");
-
                 context.getLogger().info("EVENTO - ROL ELIMINADO");
-
                 context.getLogger().info("========================================");
 
                 context.getLogger().info("ID Rol: " + idRol);
@@ -122,7 +116,102 @@ public class Function {
             }
 
             // ==========================================
-            // 7. Evento no soportado
+            // 7. Procesar UsuarioCreado
+            // ==========================================
+
+            if ("UsuarioCreado".equals(eventType)) {
+
+                long idUsuario = data.get("idUsuario").getAsLong();
+
+                long idRol = data.get("idRol").getAsLong();
+
+                String nombreUsuario = data.get("nombreUsuario").getAsString();
+
+                String email = data.get("email").getAsString();
+
+                String estado = data.get("estado").getAsString();
+
+                context.getLogger().info("========================================");
+                context.getLogger().info("EVENTO - USUARIO CREADO");
+                context.getLogger().info("========================================");
+
+                context.getLogger().info("ID Usuario: " + idUsuario);
+
+                context.getLogger().info("ID Rol: " + idRol);
+
+                context.getLogger().info("Nombre usuario: " + nombreUsuario);
+
+                context.getLogger().info("Email: " + email);
+
+                context.getLogger().info("Estado: " + estado);
+
+                context.getLogger().info("Procesamiento de UsuarioCreado finalizado.");
+
+                context.getLogger().info("========================================");
+
+                return;
+            }
+
+            // ==========================================
+            // 8. Procesar UsuarioActualizado
+            // ==========================================
+
+            if ("UsuarioActualizado".equals(eventType)) {
+
+                long idUsuario = data.get("idUsuario").getAsLong();
+
+                long idRol = data.get("idRol").getAsLong();
+
+                String nombreUsuario = data.get("nombreUsuario").getAsString();
+
+                String email = data.get("email").getAsString();
+
+                String estado = data.get("estado").getAsString();
+
+                context.getLogger().info("========================================");
+                context.getLogger().info("EVENTO - USUARIO ACTUALIZADO");
+                context.getLogger().info("========================================");
+
+                context.getLogger().info("ID Usuario: " + idUsuario);
+
+                context.getLogger().info("ID Rol: " + idRol);
+
+                context.getLogger().info("Nombre usuario: " + nombreUsuario);
+
+                context.getLogger().info("Email: " + email);
+
+                context.getLogger().info("Estado: " + estado);
+
+                context.getLogger().info("Procesamiento de UsuarioActualizado finalizado.");
+
+                context.getLogger().info("========================================");
+
+                return;
+            }
+
+            // ==========================================
+            // 9. Procesar UsuarioEliminado
+            // ==========================================
+
+            if ("UsuarioEliminado".equals(eventType)) {
+
+                long idUsuario = data.get("idUsuario").getAsLong();
+
+                context.getLogger().info("========================================");
+                context.getLogger().info("EVENTO - USUARIO ELIMINADO");
+                context.getLogger().info("========================================");
+
+                context.getLogger().info("ID Usuario: " + idUsuario);
+
+                context.getLogger().info("Procesamiento de UsuarioEliminado finalizado.");
+
+                context.getLogger().info("========================================");
+
+                return;
+            }
+
+            // ==========================================
+            // 10. Evento no soportado
             // ==========================================
 
             context.getLogger().info("Evento recibido pero no procesado: " + eventType);
