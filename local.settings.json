@@ -3,7 +3,11 @@
   "Values": {
     "AzureWebJobsStorage": "",
     "AzureWebJobsSecretStorageType": "Files",
-    "FUNCTIONS_WORKER_RUNTIME": "java"
+    "FUNCTIONS_WORKER_RUNTIME": "java",
+    "ORACLE_TNS_ALIAS": "trecml99m4zmwh47_high",
+    "ORACLE_USER": "FULLSTACK",
+    "ORACLE_PASSWORD": "Full_1234567",
+    "TNS_ADMIN": "C:/Oci/wallets"
   },
   "Host": {
     "LocalHttpPort": 7072

@@ -1,5 +1,7 @@
 package com.function;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.microsoft.azure.functions.ExecutionContext;
@@ -107,6 +109,73 @@ public class Function {
                 context.getLogger().info("========================================");
 
                 context.getLogger().info("ID Rol: " + idRol);
+                context.getLogger()
+                        .info("Acción: quitar automáticamente el rol a los usuarios asociados.");
+
+                String sqlActualizarUsuarios = """
+                        UPDATE USUARIOS
+                        SET ID_ROL = 1
+                        WHERE ID_ROL = ?
+                        """;
+
+                String sqlEliminarRol = """
+                        DELETE FROM ROLES
+                        WHERE ID_ROL = ?
+                          AND ESTADO = 'INACTIVO'
+                        """;
+
+                try (Connection connection = OracleConnection.getConnection();
+                        PreparedStatement statementUsuarios =
+                                connection.prepareStatement(sqlActualizarUsuarios);
+                        PreparedStatement statementRol =
+                                connection.prepareStatement(sqlEliminarRol)) {
+
+                    connection.setAutoCommit(false);
+
+                    context.getLogger().info("Ejecutando UPDATE de usuarios en Oracle...");
+
+                    statementUsuarios.setLong(1, idRol);
+
+                    int usuariosActualizados = statementUsuarios.executeUpdate();
+
+                    context.getLogger().info("Usuarios actualizados: " + usuariosActualizados);
+
+                    context.getLogger().info("Ejecutando DELETE físico del rol INACTIVO...");
+
+                    statementRol.setLong(1, idRol);
+
+                    int rolesEliminados = statementRol.executeUpdate();
+
+                    if (rolesEliminados == 0) {
+
+                        connection.rollback();
+
+                        context.getLogger()
+                                .warning("No se eliminó el rol. Puede que ya haya sido procesado "
+                                        + "o que el rol no esté INACTIVO.");
+
+                        return;
+                    }
+
+                    connection.commit();
+
+                    context.getLogger().info("USUARIOS ACTUALIZADOS CORRECTAMENTE");
+
+                    context.getLogger().info("ID_ROL NUEVO PARA LOS USUARIOS: 1 (SIN ROL)");
+
+                    context.getLogger().info("ROL ELIMINADO FÍSICAMENTE CORRECTAMENTE");
+
+                    context.getLogger().info("ID_ROL ELIMINADO: " + idRol);
+
+                    context.getLogger().info("COMMIT realizado correctamente.");
+
+                } catch (Exception e) {
+
+                    context.getLogger().severe("ERROR procesando RolEliminado para el rol " + idRol
+                            + ": " + e.getMessage());
+
+                    throw e;
+                }
 
                 context.getLogger().info("Procesamiento de RolEliminado finalizado.");
 
@@ -114,10 +183,6 @@ public class Function {
 
                 return;
             }
-
-            // ==========================================
-            // 7. Procesar UsuarioCreado
-            // ==========================================
 
             if ("UsuarioCreado".equals(eventType)) {
 
@@ -137,13 +202,86 @@ public class Function {
 
                 context.getLogger().info("ID Usuario: " + idUsuario);
 
-                context.getLogger().info("ID Rol: " + idRol);
+                context.getLogger().info("ID Rol recibido: " + idRol);
 
                 context.getLogger().info("Nombre usuario: " + nombreUsuario);
 
                 context.getLogger().info("Email: " + email);
 
                 context.getLogger().info("Estado: " + estado);
+
+                // ==========================================
+                // Validar rol inicial
+                // ==========================================
+
+                if (idRol != 1) {
+
+                    context.getLogger().warning("El evento UsuarioCreado no tiene "
+                            + "ID_ROL = 1 (SIN ROL). " + "No se realizará actualización.");
+
+                    return;
+                }
+
+                context.getLogger().info("ID_ROL actual: 1 (SIN ROL)");
+
+                context.getLogger()
+                        .info("Acción: asignar automáticamente " + "ID_ROL = 2 (CLIENTE)");
+
+                // ==========================================
+                // Actualizar usuario en Oracle
+                // ==========================================
+
+                String sql = """
+                        UPDATE USUARIOS
+                        SET ID_ROL = 2
+                        WHERE ID_USUARIO = ?
+                          AND ID_ROL = 1
+                        """;
+
+                try (Connection connection = OracleConnection.getConnection();
+                        PreparedStatement statement = connection.prepareStatement(sql)) {
+
+                    connection.setAutoCommit(false);
+
+                    statement.setLong(1, idUsuario);
+
+                    context.getLogger().info("Ejecutando UPDATE en Oracle...");
+
+                    int filasActualizadas = statement.executeUpdate();
+
+                    // ==========================================
+                    // Verificar resultado
+                    // ==========================================
+
+                    if (filasActualizadas == 1) {
+
+                        connection.commit();
+
+                        context.getLogger().info("USUARIO ACTUALIZADO CORRECTAMENTE");
+
+                        context.getLogger().info("ID_USUARIO: " + idUsuario);
+
+                        context.getLogger().info("ID_ROL NUEVO: 2 (CLIENTE)");
+
+                        context.getLogger().info("COMMIT realizado correctamente.");
+
+                    } else {
+
+                        connection.rollback();
+
+                        context.getLogger().warning("El UPDATE no modificó ninguna fila.");
+
+                        context.getLogger().warning(
+                                "Puede que el usuario no exista " + "o que ya tenga otro rol.");
+                    }
+
+                } catch (Exception e) {
+
+                    context.getLogger().severe("ERROR actualizando el rol del usuario " + idUsuario
+                            + ": " + e.getMessage());
+
+                    throw e;
+                }
 
                 context.getLogger().info("Procesamiento de UsuarioCreado finalizado.");
 
@@ -220,7 +358,7 @@ public class Function {
 
             context.getLogger().severe("Error procesando evento Event Grid: " + e.getMessage());
 
-            throw e;
+            throw new RuntimeException("Error procesando evento Event Grid.", e);
         }
     }
 }
